@@ -1,0 +1,215 @@
+import math
+import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
+
+class Vektor:
+    def __init__(self, components):
+        self.components = tuple(components)
+        self.dimensi = len(components)
+
+    def __repr__(self):
+        comps_str = ", ".join(f"{c:.2f}" for c in self.components)
+        return f"Vektor([{comps_str}])"
+
+    def __len__(self):
+        return self.dimensi
+
+    def __add__(self, other):
+        if self.dimensi != other.dimensi:
+            raise ValueError("Dimensi vektor harus sama untuk penjumlahan.")
+        new_components = [a + b for a, b in zip(self.components, other.components)]
+        return Vektor(new_components)
+
+    def __sub__(self, other):
+        if self.dimensi != other.dimensi:
+            raise ValueError("Dimensi vektor harus sama untuk pengurangan.")
+        new_components = [a - b for a, b in zip(self.components, other.components)]
+        return Vektor(new_components)
+
+    def __mul__(self, scalar):
+        if not isinstance(scalar, (int, float)):
+            raise TypeError("Perkalian skalar hanya bisa dengan angka.")
+        new_components = [c * scalar for c in self.components]
+        return Vektor(new_components)
+    
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+
+class Matriks:
+    def __init__(self, data):
+        if not data or not all(len(row) == len(data[0]) for row in data):
+            raise ValueError("Semua baris dalam matriks harus memiliki panjang yang sama.")
+            
+        self.data = data
+        self.rows = len(data)
+        self.cols = len(data[0])
+
+    def get_dims(self):
+        return (self.rows, self.cols)
+
+    def __repr__(self):
+        s = ""
+        for row in self.data:
+            row_str = "  ".join(f"{x:8.2f}" for x in row)
+            s += f"| {row_str} |\n"
+        return s
+
+    def __add__(self, other):
+        if self.get_dims() != other.get_dims():
+            raise ValueError("Dimensi matriks harus sama untuk penjumlahan.")
+        
+        result = []
+        for i in range(self.rows):
+            new_row = []
+            for j in range(self.cols):
+                new_row.append(self.data[i][j] + other.data[i][j])
+            result.append(new_row)
+        
+        return Matriks(result)
+
+    def dot(self, other):
+        if isinstance(other, Matriks):
+            if self.cols != other.rows:
+                raise ValueError(f"Dimensi tidak cocok: {self.get_dims()} dan {other.get_dims()}")
+            
+            result = [[0 for _ in range(other.cols)] for _ in range(self.rows)]
+            
+            for i in range(self.rows):     # Baris A
+                for j in range(other.cols): # Kolom B
+                    sum_val = 0
+                    for k in range(self.cols): # Kolom A / Baris B
+                        sum_val += self.data[i][k] * other.data[k][j]
+                    result[i][j] = sum_val
+            
+            return Matriks(result)
+
+        if isinstance(other, Vektor):
+            if self.cols != other.dimensi:
+                raise ValueError(f"Dimensi tidak cocok: Matriks {self.get_dims()} dan Vektor {other.dimensi}D")
+            
+            new_components = []
+            for i in range(self.rows): # Iterasi baris matriks
+                sum_val = 0
+                for j in range(self.cols): # Iterasi kolom matriks
+                    sum_val += self.data[i][j] * other.components[j]
+                new_components.append(sum_val)
+            
+            return Vektor(new_components)
+
+        raise TypeError("Operasi 'dot' hanya didukung untuk Matriks atau Vektor.")
+
+    def transpose(self):
+        result = [[0 for _ in range(self.rows)] for _ in range(self.cols)]
+        
+        for i in range(self.rows):
+            for j in range(self.cols):
+                result[j][i] = self.data[i][j]
+        
+        return Matriks(result)
+
+print("--- Contoh Operasi Matriks ---")
+
+A = Matriks([
+    [1, 2, 3],
+    [4, 5, 6]
+]) # Matriks 2x3
+
+B = Matriks([
+    [7, 8, 9],
+    [10, 11, 12]
+]) # Matriks 2x3
+
+C = Matriks([
+    [1, 2],
+    [3, 4],
+    [5, 6]
+]) # Matriks 3x2
+
+print(f"Matriks A (2x3):\n{A}")
+print(f"Matriks B (2x3):\n{B}")
+print(f"Matriks C (3x2):\n{C}")
+
+# Penjumlahan (A + B)
+try:
+    print(f"Hasil A + B:\n{A + B}")
+except ValueError as e:
+    print(f"Error A + B: {e}")
+
+# Transpose (A^T)
+print(f"Hasil Transpose A (menjadi 3x2):\n{A.transpose()}")
+
+# Perkalian (A . C)
+# Dimensi A(2,3) * C(3,2) -> Hasil (2,2)
+try:
+    print(f"Hasil Perkalian A . C:\n{A.dot(C)}")
+except ValueError as e:
+    print(f"Error A . C: {e}")
+
+# Perkalian (A . B) -> Contoh error
+try:
+    print("Hasil Perkalian A . B:\n", A.dot(B))
+except ValueError as e:
+    print(f"Error A . B: {e}\n")
+
+print("--- Contoh Transformasi Linear ---")
+
+def plot_shape(vektor_list, color, label):
+    x_coords = [v.components[0] for v in vektor_list]
+    y_coords = [v.components[1] for v in vektor_list]
+    
+    x_coords.append(x_coords[0])
+    y_coords.append(y_coords[0])
+    
+    plt.plot(x_coords, y_coords, color=color, label=label, 
+             path_effects=[pe.withStroke(linewidth=2, foreground='white')], zorder=1)
+    
+    plt.scatter(x_coords[:-1], y_coords[:-1], color=color, zorder=2)
+
+bentuk_asli = [
+    Vektor([1, 1]),
+    Vektor([3, 1]),
+    Vektor([3, 3]),
+    Vektor([1, 3])
+]
+
+# Matriks Rotasi 45 derajat
+theta = math.radians(45) # Ubah 45 derajat ke radian
+cos_t = math.cos(theta)
+sin_t = math.sin(theta)
+
+M_rotasi = Matriks([
+    [cos_t, -sin_t],
+    [sin_t,  cos_t]
+])
+
+# Matriks Skala (x dikali 2, y dikali 1.5)
+M_skala = Matriks([
+    [2, 0],
+    [0, 1.5]
+])
+
+bentuk_rotasi = [M_rotasi.dot(v) for v in bentuk_asli]
+bentuk_skala = [M_skala.dot(v) for v in bentuk_asli]
+
+print(f"Matriks Rotasi (45 deg):\n{M_rotasi}")
+print(f"Matriks Skala (x2, y1.5):\n{M_skala}")
+print(f"Bentuk asli:\n{[v for v in bentuk_asli]}")
+print(f"\nHasil rotasi:\n{[v for v in bentuk_rotasi]}")
+print(f"\nHasil skala:\n{[v for v in bentuk_skala]}")
+
+# Visualisasi
+print("\nMenampilkan plot transformasi...")
+plt.figure(figsize=(9, 9))
+plot_shape(bentuk_asli, 'blue', 'Bentuk Asli')
+plot_shape(bentuk_rotasi, 'red', 'Hasil Rotasi 45 deg')
+plot_shape(bentuk_skala, 'green', 'Hasil Skala (x2, y1.5)')
+
+plt.axhline(0, color='grey', lw=0.5)
+plt.axvline(0, color='grey', lw=0.5)
+plt.grid(True)
+plt.legend()
+plt.title("Transformasi Linear pada Gambar 2D")
+plt.xlabel("Sumbu X")
+plt.ylabel("Sumbu Y")
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
