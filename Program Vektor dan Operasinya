@@ -1,0 +1,185 @@
+import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe 
+
+class Vektor:
+    def __init__(self, components):
+        self.components = tuple(components)
+        self.dimensi = len(components)
+
+    def __repr__(self):
+        comps_str = ", ".join(f"{c:.2f}" for c in self.components)
+        return f"Vektor([{comps_str}])"
+
+    def __len__(self):
+        return self.dimensi
+
+    def __add__(self, other):
+        if self.dimensi != other.dimensi:
+            raise ValueError("ERROR: Dimensi vektor harus sama untuk penjumlahan.")
+        new_components = [a + b for a, b in zip(self.components, other.components)]
+        return Vektor(new_components)
+
+    def __sub__(self, other):
+        if self.dimensi != other.dimensi:
+            raise ValueError("ERROR: Dimensi vektor harus sama untuk pengurangan.")
+        new_components = [a - b for a, b in zip(self.components, other.components)]
+        return Vektor(new_components)
+
+    def __mul__(self, scalar):
+        if not isinstance(scalar, (int, float)):
+            raise TypeError("Perkalian skalar hanya bisa dengan angka (int atau float).")
+        new_components = [c * scalar for c in self.components]
+        return Vektor(new_components)
+    
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+
+def buat_vektor_interaktif(dimensi, nama_vektor):
+    while True:
+        prompt = f"Masukkan komponen {nama_vektor} ({dimensi}D), pisahkan dengan koma (cth: 3,5): "
+        input_str = input(prompt)
+        try:
+            parts = input_str.split(',')
+            components = [float(p.strip()) for p in parts]
+            if len(components) == dimensi:
+                return Vektor(components)
+            else:
+                print(f"Error: Harap masukkan {dimensi} komponen.")
+        except ValueError:
+            print("Error: Input tidak valid. Harap masukkan angka yang dipisahkan koma.")
+
+def minta_skalar():
+    while True:
+        try:
+            skalar = float(input("Masukkan angka skalar untuk perkalian: "))
+            return skalar
+        except ValueError:
+            print("Error: Harap masukkan satu angka saja.")
+
+def visualisasikan_2d(v1, v2, v_tambah, v_kurang, v_skalar):
+    print("\nMenampilkan plot visualisasi 2D...")
+    
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    vectors = [v_skalar, v_tambah, v_kurang, v2, v1]
+    colors = ['cyan', 'green', 'gold', 'red', 'blue']
+    labels = [
+        f"v1*skalar {v_skalar} (Resultan)",
+        f"v1+v2 {v_tambah} (Resultan)", 
+        f"v1-v2 {v_kurang} (Resultan)", 
+        f"v2 {v2}", 
+        f"v1 {v1}"
+    ]
+    zorders = [1, 2, 2, 2, 3] 
+
+    outline_effect = [pe.withStroke(linewidth=2.5, foreground='black')]
+
+    all_components = []
+    for v in vectors:
+        all_components.extend(list(v.components))
+    
+    max_val = max(abs(c) for c in all_components) * 1.2 + 2
+    ax.set_xlim(-max_val, max_val)
+    ax.set_ylim(-max_val, max_val)
+
+    for v, color, label, z in zip(vectors, colors, labels, zorders):
+        ax.quiver(0, 0, v.components[0], v.components[1], 
+                  color=color, angles='xy', scale_units='xy', 
+                  scale=1, label=label, zorder=z,
+                  path_effects=outline_effect)
+
+    ax.axhline(0, color='grey', lw=0.5, zorder=0)
+    ax.axvline(0, color='grey', lw=0.5, zorder=0)
+    ax.grid(True)
+    ax.set_xlabel("Komponen X")
+    ax.set_ylabel("Komponen Y")
+    ax.set_title("Visualisasi Operasi Vektor 2D")
+    ax.set_aspect('equal', adjustable='box') 
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    fig.subplots_adjust(right=0.7)
+
+    plt.show()
+
+def visualisasikan_3d(v1, v2, v_tambah, v_kurang, v_skalar):
+    print("\nMenampilkan plot visualisasi 3D...")
+    
+    fig = plt.figure(figsize=(10, 8))
+
+    ax = fig.add_subplot(111, projection='3d')
+
+    vectors = [v1, v2, v_tambah, v_kurang, v_skalar]
+    colors = ['blue', 'red', 'green', 'gold', 'cyan']
+    labels = [
+        f"v1 {v1}", 
+        f"v2 {v2}", 
+        f"v1+v2 {v_tambah}", 
+        f"v1-v2 {v_kurang}", 
+        f"v1*skalar {v_skalar}"
+    ]
+    origin = [0, 0, 0]
+    all_components = []
+
+    for v, color, label in zip(vectors, colors, labels):
+        x, y, z = v.components
+        ax.quiver(origin[0], origin[1], origin[2], 
+                  x, y, z, 
+                  color=color, 
+                  label=label,
+                  arrow_length_ratio=0.15) 
+        all_components.extend([x, y, z])
+
+    max_val = max(abs(c) for c in all_components) * 1.2 + 2
+    ax.set_xlim([-max_val, max_val])
+    ax.set_ylim([-max_val, max_val])
+    ax.set_zlim([-max_val, max_val])
+
+    ax.set_xlabel('Sumbu X')
+    ax.set_ylabel('Sumbu Y')
+    ax.set_zlabel('Sumbu Z')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    fig.subplots_adjust(right=0.7)
+    ax.set_title("Visualisasi Operasi Vektor 3D")
+    
+    plt.show()
+
+if __name__ == "__main__":
+    # Input 2D
+    print("--- Masukan Input Vektor 2D ---")
+    v_2d_1 = buat_vektor_interaktif(dimensi=2, nama_vektor="v1")
+    v_2d_2 = buat_vektor_interaktif(dimensi=2, nama_vektor="v2")
+    skalar_2d = minta_skalar()
+    
+    # Operasi 2D
+    hasil_tambah_2d = v_2d_1 + v_2d_2
+    hasil_kurang_2d = v_2d_1 - v_2d_2
+    hasil_skalar_2d = v_2d_1 * skalar_2d
+    
+    print("\n--- Hasil Operasi 2D ---")
+    print(f"{v_2d_1} + {v_2d_2} = {hasil_tambah_2d}")
+    print(f"{v_2d_1} - {v_2d_2} = {hasil_kurang_2d}")
+    print(f"{v_2d_1} * {skalar_2d} = {hasil_skalar_2d}")
+    
+    # Visualisasi 2D
+    visualisasikan_2d(v_2d_1, v_2d_2, hasil_tambah_2d, hasil_kurang_2d, hasil_skalar_2d)
+
+    # Input 3D
+    print("\n" + "="*30)
+    print("--- Masukan Input Vektor 3D ---")
+    v_3d_1 = buat_vektor_interaktif(dimensi=3, nama_vektor="v3")
+    v_3d_2 = buat_vektor_interaktif(dimensi=3, nama_vektor="v4")
+    skalar_3d = minta_skalar()
+    
+    # Operasi 3D
+    hasil_tambah_3d = v_3d_1 + v_3d_2
+    hasil_kurang_3d = v_3d_1 - v_3d_2
+    hasil_skalar_3d = v_3d_1 * skalar_3d
+    
+    print("\n--- Hasil Operasi 3D ---")
+    print(f"{v_3d_1} + {v_3d_2} = {hasil_tambah_3d}")
+    print(f"{v_3d_1} - {v_3d_2} = {hasil_kurang_3d}")
+    print(f"{v_3d_1} * {skalar_3d} = {hasil_skalar_3d}")
+    
+    # Visualisasi 3D
+    visualisasikan_3d(v_3d_1, v_3d_2, hasil_tambah_3d, hasil_kurang_3d, hasil_skalar_3d)
+    
+    print("\nProgram Selesai.")
