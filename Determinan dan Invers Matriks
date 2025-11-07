@@ -196,10 +196,10 @@ try:
 except ValueError as e:
     print(f"Error mencari invers M2: {e}\n")
 
-# --- Aplikasi: Solusi SPL (Tugas 3.3) ---
+# --- Aplikasi: Solusi SPL ---
 print("--- Aplikasi: Memecahkan Sistem Persamaan Linear ---")
 
-# Kita ingin memecahkan sistem:
+# Contoh Soal:
 # 2x + 3y = 8
 #  x + 4y = 9
 #
@@ -209,7 +209,7 @@ print("--- Aplikasi: Memecahkan Sistem Persamaan Linear ---")
 #
 # Solusinya adalah: X = A_inv . B
 
-# Matriks A adalah M1 yang sudah kita buat
+# Matriks A adalah M1 yang sudah dibuat
 A = M1 
 print(f"Matriks Koefisien (A):\n{A}")
 
@@ -228,7 +228,7 @@ try:
     print(f"Solusi (X = A_inv . B):\n{X}")
     print(f"Artinya, x = {X.components[0]:.0f} dan y = {X.components[1]:.0f}")
 
-    # Cek jawaban:
+    # Periksa jawaban:
     # 2(1) + 3(2) = 2 + 6 = 8 (Benar)
     # 1(1) + 4(2) = 1 + 8 = 9 (Benar)
     
