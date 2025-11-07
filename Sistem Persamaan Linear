@@ -1,11 +1,6 @@
-import math
-import numpy as np # Import NumPy untuk perbandingan
-import copy # Dibutuhkan untuk menyalin matriks agar tidak merusak aslinya
+import numpy as np
+import copy
 
-# ===================================================================
-# CLASS VEKTOR DAN MATRIKS DARI BAGIAN 1, 2, 3
-# (Tidak ada perubahan, hanya untuk konteks)
-# ===================================================================
 class Vektor:
     def __init__(self, components):
         self.components = tuple(components)
@@ -13,7 +8,6 @@ class Vektor:
     def __repr__(self):
         comps_str = ", ".join(f"{c:.2f}" for c in self.components)
         return f"Vektor([{comps_str}])"
-    # ... (metode Vektor lainnya) ...
 
 class Matriks:
     def __init__(self, data):
@@ -28,20 +22,10 @@ class Matriks:
         return s
     def is_square(self):
         return self.rows == self.cols
-    # ... (metode Matriks lainnya) ...
-
-# ===================================================================
-# BAGIAN 4: FUNGSI ELIMINASI GAUSS
-# ===================================================================
-
+    
 def solve_gauss(matrix_A, vector_b):
     """
-    Menyelesaikan SPL A.x = b menggunakan Eliminasi Gauss
-    dengan Partial Pivoting (untuk stabilitas numerik).
-    
-    Input:
-    - matrix_A: Objek Matriks (koefisien)
-    - vector_b: Objek Vektor (hasil)
+    Menyelesaikan SPL A.x = b menggunakan Eliminasi Gauss-Jordan (RREF).
     
     Output:
     - Objek Vektor (solusi x)
@@ -52,8 +36,7 @@ def solve_gauss(matrix_A, vector_b):
     if matrix_A.rows != vector_b.dimensi:
         raise ValueError("Dimensi matriks A dan vektor b tidak cocok.")
 
-    # Buat salinan agar tidak mengubah objek aslinya
-    # Kita buat matriks augmented [A|b]
+    # Buat salinan matriks augmented [A|b]
     n = matrix_A.rows
     aug_matrix = [copy.deepcopy(matrix_A.data[i]) + [vector_b.components[i]] for i in range(n)]
 
@@ -62,10 +45,9 @@ def solve_gauss(matrix_A, vector_b):
         print(row)
     print("-" * 20)
 
-    # --- 1. Forward Elimination ---
+    # --- 1. Forward Elimination (Membuat Segitiga Atas) ---
     for i in range(n):
         # a. Partial Pivoting
-        # Cari baris dengan nilai absolut terbesar di kolom i (mulai dari baris i)
         max_row_index = i
         max_val = abs(aug_matrix[i][i])
         for k in range(i + 1, n):
@@ -73,54 +55,62 @@ def solve_gauss(matrix_A, vector_b):
                 max_val = abs(aug_matrix[k][i])
                 max_row_index = k
         
-        # Tukar baris i dengan baris max (jika perlu)
         if max_row_index != i:
             aug_matrix[i], aug_matrix[max_row_index] = aug_matrix[max_row_index], aug_matrix[i]
             print(f"PIVOT: Menukar baris {i} dan {max_row_index}")
 
-        # b. Cek pivot = 0 (setelah pivot) -> singular
+        # b. Cek pivot = 0
         pivot = aug_matrix[i][i]
-        if abs(pivot) < 1e-10: # Gunakan toleransi kecil
+        if abs(pivot) < 1e-10: 
             raise ValueError("Matriks singular, tidak ada solusi unik (pivot = 0).")
             
         # c. Buat nol di bawah pivot
-        for k in range(i + 1, n): # Untuk setiap baris 'k' di bawah baris pivot 'i'
-            # Faktor pengali
+        for k in range(i + 1, n): 
             factor = aug_matrix[k][i] / pivot
-            
-            # Kurangkan (factor * baris_pivot) dari baris 'k'
-            for j in range(i, n + 1): # n+1 karena ada kolom b
+            for j in range(i, n + 1): 
                 aug_matrix[k][j] = aug_matrix[k][j] - factor * aug_matrix[i][j]
 
     print("\nMatriks Segitiga Atas [U|c]:")
+    # Ini adalah matriks yang Anda tunjukkan di gambar
     for row in aug_matrix:
         print(row)
     print("-" * 20)
 
-    # --- 2. Back Substitution ---
-    x = [0] * n # List untuk menyimpan solusi
+    # --- 2. Backward Elimination (REVISI: Membuat RREF) ---
+    # (Menggantikan bagian "Back Substitution")
     
-    # Mulai dari baris terakhir (n-1) ke baris pertama (0)
-    for i in range(n - 1, -1, -1):
-        # Ambil nilai C (dari kolom b yang sudah dimodifikasi)
-        sum_val = aug_matrix[i][n] 
+    for i in range(n - 1, -1, -1): # Iterasi dari baris TERAKHIR ke ATAS
         
-        # Kurangkan dengan U[i][j] * x[j] untuk j > i
-        for j in range(i + 1, n):
-            sum_val -= aug_matrix[i][j] * x[j]
+        # a. Normalisasi: Buat pivot [i][i] menjadi 1
+        pivot = aug_matrix[i][i]
+        # Bagi seluruh baris i dengan pivot-nya
+        for j in range(i, n + 1): # Mulai dari kolom pivot 'i'
+            aug_matrix[i][j] /= pivot
             
-        # Bagi dengan pivot U[i][i] untuk mendapatkan x[i]
-        x[i] = sum_val / aug_matrix[i][i]
+        # Sekarang aug_matrix[i][i] = 1.0
+        
+        # b. Buat nol di ATAS pivot
+        for k in range(i - 1, -1, -1): # Iterasi baris 'k' DI ATAS baris 'i'
+            # Faktor pengali (elemen yang ingin dinolkan)
+            factor = aug_matrix[k][i]
+            
+            # Kurangkan (factor * baris_i) dari baris 'k'
+            for j in range(i, n + 1): 
+                aug_matrix[k][j] = aug_matrix[k][j] - factor * aug_matrix[i][j]
+
+    print("\nMatriks Eselon Baris Tereduksi [I|s]:")
+    for row in aug_matrix:
+        print([f"{val:8.2f}" for val in row]) # Format agar rapi
+    print("-" * 20)
+
+    # --- 3. Ekstraksi Solusi ---
+    # Solusinya sekarang HANYALAH kolom terakhir
+    x = [aug_matrix[i][n] for i in range(n)]
 
     return Vektor(x)
 
-
-# ===================================================================
-# BAGIAN 5: CONTOH PENGGUNAAN (Tugas 4.1, 4.2)
-# ===================================================================
-
-print("--- 🔵 Tes Eliminasi Gauss & Perbandingan NumPy (Tugas 4.1, 4.2) ---")
-# Sistem:
+print("--- Tes Eliminasi Gauss & Perbandingan NumPy ---")
+# SPL:
 # 2x + 1y - 1z = 8
 # -3x - 1y + 2z = -11
 # -2x + 1y + 2z = -3
@@ -138,11 +128,11 @@ B = Vektor(B_data)
 print(f"Matriks A:\n{A}")
 print(f"Vektor B:\n{B}\n")
 
-# 1. Solusi menggunakan Eliminasi Gauss kita
+# 1. Solusi menggunakan Eliminasi Gauss
 try:
     solusi_gauss = solve_gauss(A, B)
-    print(f"✅ Solusi (Eliminasi Gauss): {solusi_gauss}")
-    # Jawaban harusnya x=2, y=3, z=-1
+    print(f"Solusi (Eliminasi Gauss): {solusi_gauss}")
+    # Jawaban x=2, y=3, z=-1
 except ValueError as e:
     print(f"Error Eliminasi Gauss: {e}")
 
@@ -153,15 +143,11 @@ B_np = np.array(B_data)
 
 try:
     solusi_numpy = np.linalg.solve(A_np, B_np)
-    print(f"✅ Solusi (NumPy bawaan):   {Vektor(solusi_numpy)}")
+    print(f"Solusi (NumPy bawaan):   {Vektor(solusi_numpy)}")
 except np.linalg.LinAlgError as e:
     print(f"Error NumPy: {e}")
     
-# ===================================================================
-# BAGIAN 6: APLIKASI (Tugas 4.3)
-# ===================================================================
-print("\n--- 🟢 Aplikasi: Alokasi Sumber Daya Server (Tugas 4.3) ---")
-
+print("\n--- Aplikasi: Alokasi Sumber Daya Server ---")
 # Skenario:
 # Kita punya 3 sumber daya: CPU (cores), RAM (GB), Storage (TB)
 # Kita punya 3 layanan: Web Server (x), Database (y), ML Model (z)
@@ -174,65 +160,28 @@ print("\n--- 🟢 Aplikasi: Alokasi Sumber Daya Server (Tugas 4.3) ---")
 # Total kapasitas kita:
 # - 150 cores CPU
 # - 1000 GB RAM
-# - 150 TB Storage
+# - 100 TB Storage
 #
 # Persamaan (SPL):
 # 1x + 4y + 8z = 150  (CPU)
 # 8x + 32y + 64z = 1000 (RAM)
-# 1x + 4y + 2z = 150  (Storage) <-- Oops, mari buat contoh yg lebih menarik
-# 1x + 4y + 2z = 100  (Storage) <-- mari kita ubah ini
-#
-# SPL Baru (dengan storage 100 TB):
-# 1x + 4y + 8z = 150
-# 8x + 32y + 64z = 1000
-# 1x + 4y + 2z = 100
+# 1x + 4y + 2z = 100  (Storage)
 
-A_sumber_daya = Matriks([
-    [1, 4, 8],
-    [8, 32, 64],
-    [1, 4, 2]
-])
-
-B_total = Vektor([150, 1000, 100])
-
-print("Sistem Alokasi Sumber Daya:")
-print("x = Jml Web, y = Jml DB, z = Jml ML\n")
-print(f"Matriks Kebutuhan (A):\n{A_sumber_daya}")
-print(f"Vektor Kapasitas (B):\n{B_total}\n")
-
-try:
-    solusi_sumber_daya = solve_gauss(A_sumber_daya, B_total)
-    print(f"✅ Solusi Ditemukan:\n{solusi_sumber_daya}")
-    print(f"\nArtinya, kita bisa menjalankan:")
-    print(f"  {solusi_sumber_daya.components[0]:.0f} unit Web Server")
-    print(f"  {solusi_sumber_daya.components[1]:.0f} unit Database")
-    print(f"  {solusi_sumber_daya.components[2]:.0f} unit ML Model")
-    
-except ValueError as e:
-    print(f"Error: {e}")
-
-# Cek jawaban contoh ini:
-# x=26, y=10, z=10.6
-# mari kita ubah datanya agar hasilnya bulat
-# A = [[1, 4, 8], [2, 8, 10], [1, 2, 4]]
-# B = [52, 64, 28]
-# Solusi: x=4, y=6, z=3
-print("\n--- 🟢 Aplikasi: Contoh 2 (Hasil Bulat) ---")
-A_sumber_daya_2 = Matriks([
+A_sumber_daya_ = Matriks([
     [1, 4, 8],
     [2, 8, 10],
     [1, 2, 4]
 ])
-B_total_2 = Vektor([52, 64, 28])
-print(f"Matriks Kebutuhan (A):\n{A_sumber_daya_2}")
-print(f"Vektor Kapasitas (B):\n{B_total_2}\n")
+B_total = Vektor([52, 64, 28])
+print(f"Matriks Kebutuhan (A):\n{A_sumber_daya_}")
+print(f"Vektor Kapasitas (B):\n{B_total}\n")
 
 try:
-    solusi_2 = solve_gauss(A_sumber_daya_2, B_total_2)
-    print(f"✅ Solusi Ditemukan:\n{solusi_2}")
+    solusi = solve_gauss(A_sumber_daya_, B_total)
+    print(f"Solusi:\n{solusi}")
     print(f"\nArtinya, kita bisa menjalankan:")
-    print(f"  {solusi_2.components[0]:.0f} unit Layanan A")
-    print(f"  {solusi_2.components[1]:.0f} unit Layanan B")
-    print(f"  {solusi_2.components[2]:.0f} unit Layanan C")
+    print(f"  {solusi.components[0]:.0f} unit Layanan A")
+    print(f"  {solusi.components[1]:.0f} unit Layanan B")
+    print(f"  {solusi.components[2]:.0f} unit Layanan C")
 except ValueError as e:
     print(f"Error: {e}")
