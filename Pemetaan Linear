@@ -1,0 +1,157 @@
+import math
+import copy
+
+# ===================================================================
+# CLASS VEKTOR DAN MATRIKS DARI BAGIAN SEBELUMNYA
+# (Dibutuhkan untuk implementasi)
+# ===================================================================
+
+class Vektor:
+    def __init__(self, components):
+        self.components = tuple(components)
+        self.dimensi = len(components)
+
+    def __repr__(self):
+        # Format agar lebih rapi
+        comps_str = ", ".join(f"{c:6.2f}" for c in self.components)
+        return f"Vektor([{comps_str}])"
+
+    def __add__(self, other):
+        if self.dimensi != other.dimensi: raise ValueError("Dimensi vektor harus sama")
+        return Vektor([a + b for a, b in zip(self.components, other.components)])
+
+    def __mul__(self, scalar):
+        if not isinstance(scalar, (int, float)): raise TypeError("Perkalian skalar hanya dengan angka")
+        return Vektor([c * scalar for c in self.components])
+    
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+    
+    def __eq__(self, other):
+        """Helper untuk perbandingan (membandingkan floating point)."""
+        if not isinstance(other, Vektor) or self.dimensi != other.dimensi:
+            return False
+        # Cek kesamaan dengan toleransi kecil (epsilon)
+        for a, b in zip(self.components, other.components):
+            if abs(a - b) > 1e-9:
+                return False
+        return True
+
+class Matriks:
+    def __init__(self, data):
+        self.data = data
+        self.rows = len(data)
+        self.cols = len(data[0])
+
+    def __repr__(self):
+        s = ""
+        for row in self.data:
+            row_str = "  ".join(f"{x:8.2f}" for x in row)
+            s += f"| {row_str} |\n"
+        return s
+
+    def dot(self, other):
+        if isinstance(other, Vektor):
+            if self.cols != other.dimensi:
+                raise ValueError(f"Dimensi tidak cocok: Matriks {self.get_dims()} dan Vektor {other.dimensi}D")
+            new_components = [sum(self.data[i][j] * other.components[j] for j in range(self.cols)) for i in range(self.rows)]
+            return Vektor(new_components)
+        # ... (metode dot untuk Matriks lainnya) ...
+        raise TypeError("Operasi 'dot' hanya didukung untuk Matriks atau Vektor.")
+
+# ===================================================================
+# BAGIAN 5: IMPLEMENTASI PEMETAAN LINEAR
+# ===================================================================
+
+def pemetaan_linear_T(vektor_input, matriks_transformasi):
+    """
+    Ini adalah fungsi 'T' (Pemetaan Linear) kita.
+    Inputnya adalah Vektor, outputnya adalah Vektor baru
+    yang didapat dari M . v
+    """
+    # Pastikan input adalah Vektor 2D
+    if not isinstance(vektor_input, Vektor) or vektor_input.dimensi != 2:
+        raise ValueError("Input harus Vektor 2D")
+    
+    # T(v) = M . v
+    vektor_output = matriks_transformasi.dot(vektor_input)
+    return vektor_output
+
+# ===================================================================
+# BAGIAN 6: DEMONSTRASI SIFAT LINEARITAS (Tugas 5.3)
+# ===================================================================
+
+print("--- 🔵 Demonstrasi Sifat Linearitas ---")
+
+# 1. Tentukan "aturan" pemetaan kita (Matriks T)
+# Kita gunakan matriks "Shear" (geser) sebagai contoh
+M_transformasi = Matriks([
+    [1, 0.5], # Baris 1
+    [0, 1]    # Baris 2
+])
+print(f"Pemetaan T didefinisikan oleh Matriks M:\n{M_transformasi}")
+
+# 2. Siapkan data uji
+u = Vektor([2, 4])
+v = Vektor([5, 1])
+c = 3 # Skalar
+
+print(f"Vektor u = {u}")
+print(f"Vektor v = {v}")
+print(f"Skalar c = {c}\n")
+
+# --- Tes Sifat 1: Penjumlahan T(u + v) == T(u) + T(v) ---
+print("--- 1. Tes Sifat Penjumlahan (Additivity) ---")
+print(f"  T(u + v) = T(u) + T(v)?\n")
+
+# Sisi Kiri: T(u + v)
+# Hitung u + v dulu, BARU transformasikan
+u_plus_v = u + v
+T_u_plus_v = pemetaan_linear_T(u_plus_v, M_transformasi)
+print(f"  SISI KIRI:")
+print(f"    u + v = {u_plus_v}")
+print(f"    T(u + v) = {T_u_plus_v}\n")
+
+# Sisi Kanan: T(u) + T(v)
+# Transformasikan u dan v dulu, BARU jumlahkan hasilnya
+T_u = pemetaan_linear_T(u, M_transformasi)
+T_v = pemetaan_linear_T(v, M_transformasi)
+T_u_plus_T_v = T_u + T_v
+print(f"  SISI KANAN:")
+print(f"    T(u) = {T_u}")
+print(f"    T(v) = {T_v}")
+print(f"    T(u) + T(v) = {T_u_plus_T_v}\n")
+
+# Perbandingan
+# Kita tambahkan helper __eq__ di class Vektor untuk perbandingan
+if T_u_plus_v == T_u_plus_T_v:
+    print("  ✅ TERBUKTI: T(u + v) sama dengan T(u) + T(v)")
+else:
+    print("  ❌ GAGAL: Sifat penjumlahan tidak terpenuhi.")
+
+
+# --- Tes Sifat 2: Perkalian Skalar T(c.v) == c.T(v) ---
+print("\n" + "--- 2. Tes Sifat Perkalian Skalar (Homogeneity) ---")
+print(f"  T(c * v) = c * T(v)?\n")
+
+# Sisi Kiri: T(c * v)
+# Kalikan c * v dulu, BARU transformasikan
+c_times_v = c * v
+T_c_times_v = pemetaan_linear_T(c_times_v, M_transformasi)
+print(f"  SISI KIRI:")
+print(f"    c * v = {c_times_v}")
+print(f"    T(c * v) = {T_c_times_v}\n")
+
+# Sisi Kanan: c * T(v)
+# Transformasikan v dulu, BARU kalikan hasilnya dengan c
+# T_v sudah kita hitung di atas
+c_times_T_v = c * T_v
+print(f"  SISI KANAN:")
+print(f"    T(v) = {T_v}")
+print(f"    c * T(v) = {c_times_T_v}\n")
+
+# Perbandingan
+if T_c_times_v == c_times_T_v:
+    print("  ✅ TERBUKTI: T(c * v) sama dengan c * T(v)")
+else:
+    print("  ❌ GAGAL: Sifat perkalian skalar tidak terpenuhi.")
