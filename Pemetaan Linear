@@ -1,18 +1,9 @@
-import math
-import copy
-
-# ===================================================================
-# CLASS VEKTOR DAN MATRIKS DARI BAGIAN SEBELUMNYA
-# (Dibutuhkan untuk implementasi)
-# ===================================================================
-
 class Vektor:
     def __init__(self, components):
         self.components = tuple(components)
         self.dimensi = len(components)
 
     def __repr__(self):
-        # Format agar lebih rapi
         comps_str = ", ".join(f"{c:6.2f}" for c in self.components)
         return f"Vektor([{comps_str}])"
 
@@ -28,10 +19,8 @@ class Vektor:
         return self.__mul__(scalar)
     
     def __eq__(self, other):
-        """Helper untuk perbandingan (membandingkan floating point)."""
         if not isinstance(other, Vektor) or self.dimensi != other.dimensi:
             return False
-        # Cek kesamaan dengan toleransi kecil (epsilon)
         for a, b in zip(self.components, other.components):
             if abs(a - b) > 1e-9:
                 return False
@@ -56,42 +45,24 @@ class Matriks:
                 raise ValueError(f"Dimensi tidak cocok: Matriks {self.get_dims()} dan Vektor {other.dimensi}D")
             new_components = [sum(self.data[i][j] * other.components[j] for j in range(self.cols)) for i in range(self.rows)]
             return Vektor(new_components)
-        # ... (metode dot untuk Matriks lainnya) ...
         raise TypeError("Operasi 'dot' hanya didukung untuk Matriks atau Vektor.")
 
-# ===================================================================
-# BAGIAN 5: IMPLEMENTASI PEMETAAN LINEAR
-# ===================================================================
-
 def pemetaan_linear_T(vektor_input, matriks_transformasi):
-    """
-    Ini adalah fungsi 'T' (Pemetaan Linear) kita.
-    Inputnya adalah Vektor, outputnya adalah Vektor baru
-    yang didapat dari M . v
-    """
     # Pastikan input adalah Vektor 2D
     if not isinstance(vektor_input, Vektor) or vektor_input.dimensi != 2:
         raise ValueError("Input harus Vektor 2D")
     
-    # T(v) = M . v
     vektor_output = matriks_transformasi.dot(vektor_input)
     return vektor_output
 
-# ===================================================================
-# BAGIAN 6: DEMONSTRASI SIFAT LINEARITAS (Tugas 5.3)
-# ===================================================================
-
-print("--- 🔵 Demonstrasi Sifat Linearitas ---")
-
-# 1. Tentukan "aturan" pemetaan kita (Matriks T)
-# Kita gunakan matriks "Shear" (geser) sebagai contoh
+print("--- Demonstrasi Sifat Linearitas ---")
 M_transformasi = Matriks([
     [1, 0.5], # Baris 1
     [0, 1]    # Baris 2
 ])
 print(f"Pemetaan T didefinisikan oleh Matriks M:\n{M_transformasi}")
 
-# 2. Siapkan data uji
+# Data uji
 u = Vektor([2, 4])
 v = Vektor([5, 1])
 c = 3 # Skalar
@@ -125,9 +96,9 @@ print(f"    T(u) + T(v) = {T_u_plus_T_v}\n")
 # Perbandingan
 # Kita tambahkan helper __eq__ di class Vektor untuk perbandingan
 if T_u_plus_v == T_u_plus_T_v:
-    print("  ✅ TERBUKTI: T(u + v) sama dengan T(u) + T(v)")
+    print(" TERBUKTI: T(u + v) sama dengan T(u) + T(v)")
 else:
-    print("  ❌ GAGAL: Sifat penjumlahan tidak terpenuhi.")
+    print(" GAGAL: Sifat penjumlahan tidak terpenuhi.")
 
 
 # --- Tes Sifat 2: Perkalian Skalar T(c.v) == c.T(v) ---
@@ -152,6 +123,6 @@ print(f"    c * T(v) = {c_times_T_v}\n")
 
 # Perbandingan
 if T_c_times_v == c_times_T_v:
-    print("  ✅ TERBUKTI: T(c * v) sama dengan c * T(v)")
+    print(" TERBUKTI: T(c * v) sama dengan c * T(v)")
 else:
-    print("  ❌ GAGAL: Sifat perkalian skalar tidak terpenuhi.")
+    print(" GAGAL: Sifat perkalian skalar tidak terpenuhi.")
