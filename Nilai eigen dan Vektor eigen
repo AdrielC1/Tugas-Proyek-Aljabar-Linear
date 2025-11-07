@@ -2,164 +2,145 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
-# ===================================================================
-# BAGIAN 1 & 2: MENCARI EIGEN & VISUALISASI (Tugas 6.1, 6.2)
-# ===================================================================
-print("--- 🔵 Bagian 1 & 2: Implementasi & Visualisasi ---")
+def print_matriks_rapi(data, title=""):
+    s = f"{title}:\n" if title else ""
+    if hasattr(data, 'ndim') and data.ndim == 2:
+        for row in data:
+            row_str = "  ".join(f"{x:8.2f}" for x in row)
+            s += f"| {row_str} |\n"
+    elif hasattr(data, 'ndim') and data.ndim == 1:
+        row_str = "  ".join(f"{x:8.2f}" for x in data)
+        s += f"[{row_str}]\n"
+    else:
+        s = f"{title}:\n{data}\n"
+    print(s)
 
-# 1. Definisikan Matriks Transformasi (Tugas 6.1)
-# Kita pakai matriks 'shear' (geser)
+print("--- Menemukan Nilai & Vektor Eigen ---")
 A = np.array([
-    [1, 1],
-    [0, 2]
+    [2, 1],
+    [1, 2]
 ])
+print_matriks_rapi(A, "Matriks A")
 
-print(f"Matriks A:\n{A}\n")
+print("Langkah 1: Cari Nilai Eigen (λ) dengan det(λI - A) = 0")
+print(" det( |λ-2  -1 | ) = 0")
+print("      |-1   λ-2|")
 
-# 2. Cari Nilai Eigen dan Vektor Eigen (Tugas 6.1)
-# Ini adalah implementasi profesionalnya
+print("\n Persamaan Karakteristik: (λ-2)(λ-2) - (-1)(-1) = 0")
+print(" λ² - 4λ + 3 = 0  =>  (λ-1)(λ-3) = 0")
+print(" -> Nilai Eigen (λ) yang kita cari adalah λ=1 dan λ=3.")
+
+print("\nLangkah 2: Cari Vektor Eigen (v) untuk setiap λ")
+
+print("\n   Kasus 1: Untuk λ = 1  =>  (1.I - A)v = 0")
+print("   | -1  -1 | |x1| = |0|  =>  -x1 - x2 = 0  =>  x1 = -x2")
+print("   | -1  -1 | |x2| = |0|  =>  v1 kelipatan dari [-1, 1]")
+
+print("\n   Kasus 2: Untuk λ = 3  =>  (3.I - A)v = 0")
+print("   | 1  -1 | |x1| = |0|  =>  x1 - x2 = 0  =>  x1 = x2")
+print("   | -1  1 | |x2| = |0|  =>  v2 kelipatan dari [1, 1]")
+
+print("\n--- Perbandingan dengan Numpy: 'np.linalg.eig(A)' ---")
+
 nilai_eigen, vektor_eigen_cols = np.linalg.eig(A)
+sort_indices = np.argsort(nilai_eigen)
+nilai_eigen = nilai_eigen[sort_indices]
+vektor_eigen_cols = vektor_eigen_cols[:, sort_indices]
+
+print_matriks_rapi(nilai_eigen, "Nilai Eigen (lambda) dari NumPy")
+print_matriks_rapi(vektor_eigen_cols, "Vektor Eigen (kolom v1, v2) dari NumPy")
 
 lambda1 = nilai_eigen[0]
 lambda2 = nilai_eigen[1]
-
-# Vektor eigen dikembalikan sebagai KOLOM-KOLOM
 v1 = vektor_eigen_cols[:, 0]
 v2 = vektor_eigen_cols[:, 1]
 
-print(f"Nilai Eigen (lambda): {nilai_eigen}")
-print(f"Vektor Eigen (kolom v1, v2):\n{vektor_eigen_cols}\n")
+print("Hasil dari NumPy (setelah diurutkan):")
 print(f"  Lambda 1 = {lambda1:.2f}, Vektor v1 = {v1}")
 print(f"  Lambda 2 = {lambda2:.2f}, Vektor v2 = {v2}\n")
 
-# 3. Siapkan Vektor untuk Visualisasi (Tugas 6.2)
-# v1 dan v2 adalah vektor eigen.
-# Mari kita buat 1 vektor "normal" (bukan eigen) untuk perbandingan
-v_normal = np.array([1, 1])
 
-# 4. Terapkan Transformasi A ke semua vektor
-# T(v) = A . v
+v_normal = np.array([1, 0]) 
+
 T_v1 = A.dot(v1)
 T_v2 = A.dot(v2)
 T_v_normal = A.dot(v_normal)
 
-# 5. Cek Pembuktian (A.v == lambda * v)
-print("Pembuktian A.v = lambda * v:")
-print(f"  A . v1     = {T_v1}")
-print(f"  lambda1 * v1 = {lambda1 * v1}")
-print(f"  A . v2     = {T_v2}")
-print(f"  lambda2 * v2 = {lambda2 * v2}\n")
-# Anda akan lihat bahwa hasilnya SAMA!
+# Pembuktian Manual vs Numpy (A.v == lambda * v)
+print("\n--- Pembuktian A.v = lambda * v ---")
+print(f"  A . v1 (hasil numerik):")
+print_matriks_rapi(T_v1, "  A . v1    ")
+print_matriks_rapi(lambda1 * v1, "  lambda1 * v1")
 
-# 6. Visualisasi (Tugas 6.2)
+print(f"\n  A . v2 (hasil numerik):")
+print_matriks_rapi(T_v2, "  A . v2    ")
+print_matriks_rapi(lambda2 * v2, "  lambda2 * v2")
+print("-> Hasilnya terbukti sama!\n")
+
+# Visualisasi
 print("Menampilkan plot visualisasi...")
 fig, ax = plt.subplots(figsize=(10, 10))
 ax.set_aspect('equal')
 ax.grid(True)
-ax.set_title("Visualisasi Efek Vektor Eigen")
+ax.set_title("Visualisasi Efek Vektor Eigen (A = [[2,1],[1,2]])")
 ax.set_xlabel("Sumbu X")
 ax.set_ylabel("Sumbu Y")
-
-# Tarik garis bantu
 ax.axhline(0, color='grey', lw=0.5)
 ax.axvline(0, color='grey', lw=0.5)
 
-# Fungsi helper untuk plot
 def plot_vektor(vec, color, label, linestyle='-'):
     ax.quiver(0, 0, vec[0], vec[1], 
               color=color, 
               angles='xy', scale_units='xy', scale=1, 
               label=label, 
-              path_effects=[pe.withStroke(linewidth=2.5, foreground='white')],
+              path_effects=[pe.withStroke(linewidth=2.5, foreground='black')],
               zorder=3)
     # Plot garis tak terhingga
-    if label.startswith("Vektor"):
+    if label.startswith("Vektor E"): # Ubah 'Vektor' ke 'Vektor E'
         ax.plot([0, vec[0]*10], [0, vec[1]*10], color=color, ls=':', zorder=2)
         ax.plot([0, vec[0]*-10], [0, vec[1]*-10], color=color, ls=':', zorder=2)
 
-# Plot Vektor Eigen (v1) dan transformasinya
-plot_vektor(v1, 'b', f"Vektor Eigen v1 (lambda={lambda1:.1f})")
 plot_vektor(T_v1, 'b', "T(v1) - TETAP DI JALUR", linestyle='--')
+plot_vektor(v1, 'b', f"Vektor Eigen v1 (lambda={lambda1:.1f})")
 
-# Plot Vektor Eigen (v2) dan transformasinya
-plot_vektor(v2, 'r', f"Vektor Eigen v2 (lambda={lambda2:.1f})")
 plot_vektor(T_v2, 'r', "T(v2) - TETAP DI JALUR", linestyle='--')
+plot_vektor(v2, 'r', f"Vektor Eigen v2 (lambda={lambda2:.1f})")
 
-# Plot Vektor Normal (v_normal) dan transformasinya
-plot_vektor(v_normal, 'g', "Vektor Normal v_normal")
 plot_vektor(T_v_normal, 'g', "T(v_normal) - BERUBAH ARAH", linestyle='--')
+plot_vektor(v_normal, 'g', "Vektor Normal v_normal")
 
-# Atur batas plot dan legenda
 ax.set_xlim(-2, 4)
-ax.set_ylim(-1, 3)
+ax.set_ylim(-2, 4)
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 fig.subplots_adjust(right=0.7)
 plt.show()
 
+print("\n--- Aplikasi (Analisis Stabilitas) ---")
 
-# ===================================================================
-# BAGIAN 3: APLIKASI KASUS NYATA (Tugas 6.3)
-# ===================================================================
-print("\n--- 🟢 Bagian 3: Aplikasi (Analisis Stabilitas) ---")
-
-# Skenario: "Markov Chain" untuk pangsa pasar (stabilitas sistem)
-# Ada 2 layanan: A dan B
-# - Setiap bulan, A mempertahankan 90% pelanggannya, 10% pindah ke B.
-# - Setiap bulan, B mempertahankan 80% pelanggannya, 20% pindah ke A.
-
-# Matriks Transisi P (kolom = DARI, baris = KE)
-#        (Dari A)  (Dari B)
-# (Ke A)    0.9       0.2
-# (Ke B)    0.1       0.8
 P = np.array([
     [0.9, 0.2],
     [0.1, 0.8]
 ])
+print_matriks_rapi(P, "Matriks Transisi (P)")
 
-print(f"Matriks Transisi (P):\n{P}\n")
-
-# Distribusi stabil (stable state) adalah Vektor Eigen
-# yang memiliki Nilai Eigen = 1.
-# Mari kita buktikan!
 p_vals, p_vecs = np.linalg.eig(P)
-
 print(f"Nilai Eigen P: {p_vals}")
-print(f"Vektor Eigen P:\n{p_vecs}\n")
+print_matriks_rapi(p_vecs, "Vektor Eigen P")
 
-# Temukan vektor yang nilai eigen-nya ~ 1.0
-# (Kita gunakan np.argmin untuk menemukan v yang lambda-nya paling dekat ke 1)
 indeks_stabil = np.argmin(np.abs(p_vals - 1.0))
 vektor_stabil = p_vecs[:, indeks_stabil]
-
 print(f"Vektor stabil mentah (v_stabil): {vektor_stabil}")
 
-# Vektor ini [x, y] mewakili rasio. Kita perlu menormalisasinya
-# agar x + y = 1 (total pangsa pasar = 100%)
 vektor_stabil_normal = vektor_stabil / np.sum(vektor_stabil)
-
-# (Hasilnya mungkin negatif [-0.89, -0.44], itu tidak masalah,
-# karena arah [-1, -1] sama dengan [1, 1]. Kita ambil nilai absolut)
 vektor_stabil_final = np.abs(vektor_stabil_normal)
-
 print(f"\nDistribusi Stabil (Normalisasi): {vektor_stabil_final}")
-print(f"Artinya, sistem akan stabil pada:")
 print(f"  Layanan A: {vektor_stabil_final[0]:.1%}")
 print(f"  Layanan B: {vektor_stabil_final[1]:.1%}")
 
-# Mari kita buktikan. Mulai dengan 50/50
 status_awal = np.array([0.5, 0.5]) # 50% A, 50% B
 print(f"\nJika mulai dari 50/50:")
-
 status_bln_1 = P.dot(status_awal)
-print(f"Bulan 1: {status_bln_1}") # [0.55, 0.45]
-
-status_bln_2 = P.dot(status_bln_1)
-print(f"Bulan 2: {status_bln_2}") # [0.585, 0.415]
-
-# Setelah 50 bulan...
-status_final = status_awal
-for _ in range(50):
-    status_final = P.dot(status_final)
-
-print(f"Bulan 50: {status_final}")
-print("Hasilnya sama dengan Vektor Eigen kita!")
+print(f"Bulan 1: {status_bln_1}")
+status_bln_50 = np.linalg.matrix_power(P, 50).dot(status_awal)
+print(f"Bulan 50: {status_bln_50}")
+print("Hasilnya sama dengan metode Vektor eigen")
