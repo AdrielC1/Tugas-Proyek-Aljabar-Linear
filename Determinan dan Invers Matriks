@@ -1,0 +1,236 @@
+class Vektor:
+    def __init__(self, components):
+        self.components = tuple(components)
+        self.dimensi = len(components)
+
+    def __repr__(self):
+        comps_str = ", ".join(f"{c:.2f}" for c in self.components)
+        return f"Vektor([{comps_str}])"
+    def __add__(self, other):
+        if self.dimensi != other.dimensi: raise ValueError("Dimensi vektor harus sama")
+        return Vektor([a + b for a, b in zip(self.components, other.components)])
+    def __sub__(self, other):
+        if self.dimensi != other.dimensi: raise ValueError("Dimensi vektor harus sama")
+        return Vektor([a - b for a, b in zip(self.components, other.components)])
+    def __mul__(self, scalar):
+        if not isinstance(scalar, (int, float)): raise TypeError("Perkalian skalar hanya dengan angka")
+        return Vektor([c * scalar for c in self.components])
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+
+class Matriks:
+    def __init__(self, data):
+        if not data or not all(len(row) == len(data[0]) for row in data):
+            raise ValueError("Semua baris dalam matriks harus memiliki panjang yang sama.")
+        self.data = data
+        self.rows = len(data)
+        self.cols = len(data[0])
+
+    def get_dims(self):
+        return (self.rows, self.cols)
+
+    def __repr__(self):
+        s = ""
+        for row in self.data:
+            row_str = "  ".join(f"{x:8.2f}" for x in row)
+            s += f"| {row_str} |\n"
+        return s
+
+    def __add__(self, other):
+        if self.get_dims() != other.get_dims():
+            raise ValueError("Dimensi matriks harus sama untuk penjumlahan.")
+        result = [[self.data[i][j] + other.data[i][j] for j in range(self.cols)] for i in range(self.rows)]
+        return Matriks(result)
+
+    def dot(self, other):
+        if isinstance(other, Matriks):
+            if self.cols != other.rows:
+                raise ValueError(f"Dimensi tidak cocok: {self.get_dims()} dan {other.get_dims()}")
+            result = [[sum(self.data[i][k] * other.data[k][j] for k in range(self.cols)) for j in range(other.cols)] for i in range(self.rows)]
+            return Matriks(result)
+        if isinstance(other, Vektor):
+            if self.cols != other.dimensi:
+                raise ValueError(f"Dimensi tidak cocok: Matriks {self.get_dims()} dan Vektor {other.dimensi}D")
+            new_components = [sum(self.data[i][j] * other.components[j] for j in range(self.cols)) for i in range(self.rows)]
+            return Vektor(new_components)
+        raise TypeError("Operasi 'dot' hanya didukung untuk Matriks atau Vektor.")
+
+    def transpose(self):
+        result = [[self.data[i][j] for i in range(self.rows)] for j in range(self.cols)]
+        return Matriks(result)
+
+    def __mul__(self, scalar):
+        """Implementasi operator '*' (self * scalar)."""
+        if not isinstance(scalar, (int, float)):
+            raise TypeError("Perkalian skalar hanya bisa dengan angka.")
+        result = [[self.data[i][j] * scalar for j in range(self.cols)] for i in range(self.rows)]
+        return Matriks(result)
+    
+    def __rmul__(self, scalar):
+        """Implementasi operator '*' terbalik (scalar * self)."""
+        return self.__mul__(scalar)
+
+    def is_square(self):
+        return self.rows == self.cols
+
+    def get_submatrix(self, r_del, c_del):
+        new_data = []
+        for i in range(self.rows):
+            if i == r_del:
+                continue
+            new_row = []
+            for j in range(self.cols):
+                if j == c_del:
+                    continue
+                new_row.append(self.data[i][j])
+            new_data.append(new_row)
+        return Matriks(new_data)
+
+    def determinant(self):
+        if not self.is_square():
+            raise ValueError("Determinan hanya bisa dihitung untuk matriks persegi.")
+        
+        # Kasus Matriks 1x1
+        if self.rows == 1:
+            return self.data[0][0]
+        
+        # Kasus Matriks 2x2 (rumus ad-bc)
+        if self.rows == 2:
+            a = self.data[0][0]
+            b = self.data[0][1]
+            c = self.data[1][0]
+            d = self.data[1][1]
+            return (a * d) - (b * c)
+        
+        # Kasus rekursif: Matriks 3x3 atau lebih besar
+        # Menggunakan ekspansi kofaktor sepanjang baris pertama (i=0)
+        det = 0
+        for j in range(self.cols):
+            sign = (-1) ** j 
+            element = self.data[0][j]
+            sub_matrix = self.get_submatrix(r_del=0, c_del=j)
+            minor_det = sub_matrix.determinant()
+            
+            det += sign * element * minor_det
+            
+        return det
+
+    def inverse(self):
+        if not self.is_square():
+            raise ValueError("Invers hanya ada untuk matriks persegi.")
+
+        det = self.determinant()
+        
+        if det == 0:
+            raise ValueError("Matriks ini singular (determinan = 0), tidak memiliki invers.")
+
+        # Kasus Matriks 1x1
+        if self.rows == 1:
+            return Matriks([[1 / det]])
+
+        # Kasus Matriks 2x2
+        if self.rows == 2:
+            a = self.data[0][0]
+            b = self.data[0][1]
+            c = self.data[1][0]
+            d = self.data[1][1]
+            inv_data = [
+                [d / det, -b / det],
+                [-c / det, a / det]
+            ]
+            return Matriks(inv_data)
+
+        # Kasus Matriks 3x3 atau lebih: Hitung Matriks Kofaktor
+        cofactor_data = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        
+        for i in range(self.rows):
+            for j in range(self.cols):
+                sub_matrix = self.get_submatrix(r_del=i, c_del=j)
+                sign = (-1) ** (i + j)
+                cofactor_data[i][j] = sign * sub_matrix.determinant()
+        
+        cofactor_matrix = Matriks(cofactor_data)
+        
+        adjugate_matrix = cofactor_matrix.transpose()
+        
+        inverse_matrix = adjugate_matrix * (1 / det)
+        
+        return inverse_matrix
+
+print("--- Contoh Determinan ---")
+M1 = Matriks([
+    [2, 3],
+    [1, 4]
+])
+print(f"Matriks M1 (2x2):\n{M1}")
+print(f"Determinan M1: {M1.determinant()}\n") # Hasil: (2*4) - (3*1) = 5
+
+M2 = Matriks([
+    [1, 2, 3],
+    [0, 1, 4],
+    [5, 6, 0]
+])
+print(f"Matriks M2 (3x3):\n{M2}")
+print(f"Determinan M2: {M2.determinant()}\n") # Hasil: 1(0-24) - 2(0-20) + 3(0-5) = -24 + 40 - 15 = 1
+
+print("--- Contoh Invers Matriks ---")
+try:
+    M1_inv = M1.inverse()
+    print(f"Invers dari M1:\n{M1_inv}")
+    
+    # Bukti: M1 * M1_inv harus menghasilkan Matriks Identitas
+    Identitas = M1.dot(M1_inv)
+    print(f"Pembuktian (M1 * M1_inv):\n{Identitas}")
+    
+except ValueError as e:
+    print(f"Error mencari invers M1: {e}\n")
+    
+try:
+    M2_inv = M2.inverse()
+    print(f"Invers dari M2:\n{M2_inv}")
+
+    # Bukti: M2 * M2_inv harus menghasilkan Matriks Identitas
+    Identitas2 = M2.dot(M2_inv)
+    print(f"Pembuktian (M2 * M2_inv):\n{Identitas2}")
+
+except ValueError as e:
+    print(f"Error mencari invers M2: {e}\n")
+
+# --- Aplikasi: Solusi SPL (Tugas 3.3) ---
+print("--- Aplikasi: Memecahkan Sistem Persamaan Linear ---")
+
+# Kita ingin memecahkan sistem:
+# 2x + 3y = 8
+#  x + 4y = 9
+#
+# Dalam bentuk matriks: A . X = B
+# | 2  3 | | x | = | 8 |
+# | 1  4 | | y |   | 9 |
+#
+# Solusinya adalah: X = A_inv . B
+
+# Matriks A adalah M1 yang sudah kita buat
+A = M1 
+print(f"Matriks Koefisien (A):\n{A}")
+
+# Vektor B
+B = Vektor([8, 9])
+print(f"Vektor Hasil (B):\n{B}\n")
+
+# Matriks Invers A sudah kita hitung (M1_inv)
+try:
+    A_inv = A.inverse()
+    print(f"Invers dari A (A_inv):\n{A_inv}")
+    
+    # Hitung solusi X = A_inv * B
+    X = A_inv.dot(B)
+    
+    print(f"Solusi (X = A_inv . B):\n{X}")
+    print(f"Artinya, x = {X.components[0]:.0f} dan y = {X.components[1]:.0f}")
+
+    # Cek jawaban:
+    # 2(1) + 3(2) = 2 + 6 = 8 (Benar)
+    # 1(1) + 4(2) = 1 + 8 = 9 (Benar)
+    
+except ValueError as e:
+    print(f"Error: {e}")
