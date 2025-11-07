@@ -148,36 +148,39 @@ except np.linalg.LinAlgError as e:
     print(f"Error NumPy: {e}")
     
 print("\n--- Aplikasi: Alokasi Sumber Daya Server ---")
+
 # Skenario:
-# Kita punya 3 sumber daya: CPU (cores), RAM (GB), Storage (TB)
-# Kita punya 3 layanan: Web Server (x), Database (y), ML Model (z)
+# Terdapat 3 layanan: Layanan A (x), Layanan B (y), Layanan C (z)
 #
 # Kebutuhan per layanan:
-# - Web (x):   1 core,  8 GB RAM,  1 TB storage
-# - DB (y):    4 cores, 32 GB RAM, 4 TB storage
-# - ML (z):    8 cores, 64 GB RAM, 2 TB storage
+# - Layanan A (x): 1 CPU, 1 RAM, 2 Storage
+# - Layanan B (y): 2 CPU, 4 RAM, 1 Storage
+# - Layanan C (z): 4 CPU, 2 RAM, 1 Storage
 #
 # Total kapasitas kita:
-# - 150 cores CPU
-# - 1000 GB RAM
-# - 100 TB Storage
+# - 70 unit CPU
+# - 100 unit RAM
+# - 45 unit Storage
 #
 # Persamaan (SPL):
-# 1x + 4y + 8z = 150  (CPU)
-# 8x + 32y + 64z = 1000 (RAM)
-# 1x + 4y + 2z = 100  (Storage)
+# 1x + 2y + 4z = 70   (CPU)
+# 1x + 4y + 2z = 100  (RAM)
+# 2x + 1y + 1z = 45   (Storage)
 
-A_sumber_daya_ = Matriks([
-    [1, 4, 8],
-    [2, 8, 10],
-    [1, 2, 4]
+A_sumber_daya = Matriks([
+    [1, 2, 4],
+    [1, 4, 2],
+    [2, 1, 1]
 ])
-B_total = Vektor([52, 64, 28])
-print(f"Matriks Kebutuhan (A):\n{A_sumber_daya_}")
+
+B_total = Vektor([70, 100, 45])
+
+print(f"Matriks Kebutuhan (A):\n{A_sumber_daya}")
 print(f"Vektor Kapasitas (B):\n{B_total}\n")
 
 try:
-    solusi = solve_gauss(A_sumber_daya_, B_total)
+    solusi = solve_gauss(A_sumber_daya, B_total)
+    
     print(f"Solusi:\n{solusi}")
     print(f"\nArtinya, kita bisa menjalankan:")
     print(f"  {solusi.components[0]:.0f} unit Layanan A")
